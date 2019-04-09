@@ -1,25 +1,26 @@
 {
-  "name": "mongodb-throttled-queue",
+  "name": "mongodb-leaky-bucket",
   "version": "1.0.0",
-  "description": "A throttled queue backed by MongoDB.",
+  "description": "A throttled queue backed by MongoDB using the leaky bucket algorithm.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lcneves/mongodb-throttled-queue.git"
+    "url": "git+https://github.com/lcneves/mongodb-leaky-bucket.git"
   },
   "keywords": [
     "MongoDB",
     "queue",
     "throttle",
-    "rate-limit"
+    "rate-limit",
+    "leaky bucket"
   ],
   "author": "Lucas Neves <lcneves@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/lcneves/mongodb-throttled-queue/issues"
+    "url": "https://github.com/lcneves/mongodb-leaky-bucket/issues"
   },
-  "homepage": "https://github.com/lcneves/mongodb-throttled-queue#readme"
+  "homepage": "https://github.com/lcneves/mongodb-leaky-bucket#readme"
 }
