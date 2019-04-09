@@ -1,0 +1,25 @@
+{
+  "name": "mongodb-throttled-queue",
+  "version": "1.0.0",
+  "description": "A throttled queue backed by MongoDB.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lcneves/mongodb-throttled-queue.git"
+  },
+  "keywords": [
+    "MongoDB",
+    "queue",
+    "throttle",
+    "rate-limit"
+  ],
+  "author": "Lucas Neves <lcneves@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lcneves/mongodb-throttled-queue/issues"
+  },
+  "homepage": "https://github.com/lcneves/mongodb-throttled-queue#readme"
+}
