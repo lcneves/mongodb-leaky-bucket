@@ -43,10 +43,10 @@ describe('Leaky bucket tests', () => {
     return bucket.push('Testing');
   });
 
-  it('pushes and immediately pops', () => {
-    const bucket = new LeakyBucket(db, { collectionName: 'pop-one' });
+  it('pushes and immediately shifts', () => {
+    const bucket = new LeakyBucket(db, { collectionName: 'shift-one' });
     return bucket.push('Testing')
-      .then(() => bucket.pop())
+      .then(() => bucket.shift())
       .then(res => assert(res === 'Testing'));
   });
 
@@ -55,9 +55,43 @@ describe('Leaky bucket tests', () => {
     return bucket.push('One', 'Two', 'Three');
   });
 
-  it('pushes multiple payloads and immediately pops', async () => {
-    const bucket = new LeakyBucket(db, { collectionName: 'pop-multiple' });
-    await bucket.push('One', 'Two', 'Three');
+  it('pushes multiple payloads and immediately shifts', async () => {
+    const bucket = new LeakyBucket(db, { collectionName: 'shift-multiple' });
+    await bucket.push('One');
+    await bucket.push('Two', 'Three', 'Four');
+    await bucket.push('Five');
+    const resOne = await bucket.shift();
+    const resTwo = await bucket.shift();
+    const resThree = await bucket.shift();
+    const resFour = await bucket.shift();
+    const resFive = await bucket.shift();
+    assert(resOne === 'One');
+    assert(resTwo === 'Two');
+    assert(resThree === 'Three');
+    assert(resFour === 'Four');
+    assert(resFive === 'Five');
+  });
+
+  it('unshifts', async () => {
+    const bucket = new LeakyBucket(db, { collectionName: 'unshift' });
+    await bucket.unshift('Five');
+    await bucket.unshift('Two', 'Three', 'Four');
+    await bucket.unshift('One');
+    const resOne = await bucket.shift();
+    const resTwo = await bucket.shift();
+    const resThree = await bucket.shift();
+    const resFour = await bucket.shift();
+    const resFive = await bucket.shift();
+    assert(resOne === 'One');
+    assert(resTwo === 'Two');
+    assert(resThree === 'Three');
+    assert(resFour === 'Four');
+    assert(resFive === 'Five');
+  });
+
+  it('pops', async () => {
+    const bucket = new LeakyBucket(db, { collectionName: 'pop' });
+    await bucket.push('Three', 'Two', 'One');
     const resOne = await bucket.pop();
     const resTwo = await bucket.pop();
     const resThree = await bucket.pop();
@@ -66,13 +100,13 @@ describe('Leaky bucket tests', () => {
     assert(resThree === 'Three');
   });
 
-  it('returns undefined when popped empty', async () => {
-    const bucket = new LeakyBucket(db, { collectionName: 'pop-empty' });
+  it('returns undefined when shifted empty', async () => {
+    const bucket = new LeakyBucket(db, { collectionName: 'shift-empty' });
     await bucket.push('One');
-    const resOne = await bucket.pop();
-    const resEmpty = await bucket.pop();
+    const resOne = await bucket.shift();
+    const resEmpty = await bucket.shift();
     await bucket.push('Two');
-    const resTwo = await bucket.pop();
+    const resTwo = await bucket.shift();
     assert(resOne === 'One');
     assert(resTwo === 'Two');
     assert(resEmpty === undefined);
@@ -86,19 +120,19 @@ describe('Leaky bucket tests', () => {
 
     await bucket.push('This should wait', 'This should wait too');
 
-    const immediateRes = await bucket.pop();
+    const immediateRes = await bucket.shift();
     assert(immediateRes === undefined);
 
     await time(100);
 
-    const delayedRes = await bucket.pop();
-    const immediateResTwo = await bucket.pop();
+    const delayedRes = await bucket.shift();
+    const immediateResTwo = await bucket.shift();
     assert(delayedRes === 'This should wait');
     assert(immediateResTwo === undefined);
 
     await time(100);
 
-    const delayedResTwo = await bucket.pop();
+    const delayedResTwo = await bucket.shift();
     assert(delayedResTwo === 'This should wait too');
   });
 
@@ -109,7 +143,7 @@ describe('Leaky bucket tests', () => {
     });
 
     await bucket.push('Message 1');
-    const firstRes = await bucket.pop();
+    const firstRes = await bucket.shift();
     assert(firstRes === 'Message 1');
 
     await bucket.push('Message 2');
@@ -135,11 +169,11 @@ describe('Leaky bucket tests', () => {
       assert(err.message === 'Unable to push!');
     }
 
-    const firstRes = await bucket.pop();
+    const firstRes = await bucket.shift();
     assert(firstRes === 'Message 1');
 
     await bucket.push('Message 2');
-    const secondRes = await bucket.pop();
+    const secondRes = await bucket.shift();
     assert(secondRes === 'Message 2');
   });
 
@@ -147,11 +181,11 @@ describe('Leaky bucket tests', () => {
     const bucketOne = new LeakyBucket(db, { 'collectionName': 'two-insts' });
     await bucketOne.push('Message 1');
     const bucketTwo = new LeakyBucket(db, { 'collectionName': 'two-insts' });
-    const firstRes = await bucketTwo.pop();
+    const firstRes = await bucketTwo.shift();
     assert(firstRes === 'Message 1');
 
     await bucketTwo.push('Message 2');
-    const secondRes = await bucketOne.pop();
+    const secondRes = await bucketOne.shift();
     assert(secondRes === 'Message 2');
   });
 
@@ -166,24 +200,24 @@ describe('Leaky bucket tests', () => {
       { name: 'one complex object', prop: { arr: [ 1, [ 2, 3 ] ] } }
     );
 
-    const str = await bucket.pop();
+    const str = await bucket.shift();
     assert(typeof str === 'string');
 
-    const num = await bucket.pop();
+    const num = await bucket.shift();
     assert(typeof num === 'number');
 
-    const nul = await bucket.pop();
+    const nul = await bucket.shift();
     assert(nul === null);
 
-    const boo = await bucket.pop();
+    const boo = await bucket.shift();
     assert(typeof boo === 'boolean');
 
-    const arr = await bucket.pop();
+    const arr = await bucket.shift();
     assert(Array.isArray(arr));
     assert(typeof arr[0] === 'string');
     assert(typeof arr[1] === 'number');
 
-    const obj = await bucket.pop();
+    const obj = await bucket.shift();
     assert(typeof obj === 'object');
     assert(typeof obj.name === 'string');
     assert(typeof obj.prop === 'object');
@@ -193,5 +227,3 @@ describe('Leaky bucket tests', () => {
     assert(typeof obj.prop.arr[1][1] === 'number');
   });
 });
-
-

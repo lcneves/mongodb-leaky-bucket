@@ -50,15 +50,19 @@ class LeakyBucket {
     });
   }
 
-  push (...payloads) {
+  _add (isUnshift, ...payloads) {
     const self = this;
     return new Promise((resolve, reject) => {
+      const pushOper = { '$each': payloads };
+      if (isUnshift)
+        pushOper['$position'] = 0;
+
       self.prime()
         .then(() => self.collection.findOneAndUpdate({
           lbUniqueProperty: 1,
           count: { '$lt': self.limit }
         }, {
-          '$push': { queue: { '$each': payloads } },
+          '$push': { queue: pushOper },
           '$inc': { count: payloads.length }
         }))
         .then(res => {
@@ -73,9 +77,19 @@ class LeakyBucket {
     });
   }
 
-  pop () {
+  push (...payloads) {
+    return this._add(false, ...payloads);
+  }
+
+  unshift (...payloads) {
+    return this._add(true, ...payloads);
+  }
+
+  _retrieve (isPop) {
     const self = this;
     return new Promise((resolve, reject) => {
+      const popParam = isPop ? 1 : -1;
+
       self.prime()
         .then(() => {
           const now = new Date();
@@ -86,13 +100,15 @@ class LeakyBucket {
             count: { '$gt': 0 }
           }, {
             '$set': { timestamp: now },
-            '$pop': { queue: -1 },
+            '$pop': { queue: popParam },
             '$inc': { count: -1 }
           });
         })
         .then(res => {
-          if (res && res.value && Array.isArray(res.value.queue))
-            resolve(res.value.queue[0]);
+          if (res && res.value && Array.isArray(res.value.queue)) {
+            const index = isPop ? res.value.queue.length - 1 : 0;
+            resolve(res.value.queue[index]);
+          }
           else
             resolve(undefined);
         })
@@ -100,6 +116,14 @@ class LeakyBucket {
           reject(err);
         });
     });
+  }
+
+  shift () {
+    return this._retrieve(false);
+  }
+
+  pop () {
+    return this._retrieve(true);
   }
 }
 
