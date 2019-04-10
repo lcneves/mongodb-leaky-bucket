@@ -50,7 +50,7 @@ class LeakyBucket {
     });
   }
 
-  push (payload) {
+  push (...payloads) {
     const self = this;
     return new Promise((resolve, reject) => {
       self.prime()
@@ -58,8 +58,8 @@ class LeakyBucket {
           lbUniqueProperty: 1,
           count: { '$lt': self.limit }
         }, {
-          '$push': { queue: payload },
-          '$inc': { count: 1 }
+          '$push': { queue: { '$each': payloads } },
+          '$inc': { count: payloads.length }
         }))
         .then(res => {
           if (res.ok === 1 && res.value && res.value.lbUniqueProperty === 1)
@@ -91,7 +91,7 @@ class LeakyBucket {
           });
         })
         .then(res => {
-          if (res && res.value && Array.isArray( res.value.queue))
+          if (res && res.value && Array.isArray(res.value.queue))
             resolve(res.value.queue[0]);
           else
             resolve(undefined);
