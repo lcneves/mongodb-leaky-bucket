@@ -32,7 +32,7 @@ class LeakyBucket {
           lbUniqueProperty: 1,
           count: 0,
           queue: [],
-          timestamp: new Date(0)
+          lastDequeue: new Date(0)
         }))
         .catch(err => {
           if (err.toString().includes('E11000'))
@@ -98,10 +98,10 @@ class LeakyBucket {
 
           return self.collection.findOneAndUpdate({
             lbUniqueProperty: 1,
-            timestamp: { '$lte': new Date(now.getTime() - self.interval) },
+            lastDequeue: { '$lte': new Date(now.getTime() - self.interval) },
             count: { '$gt': 0 }
           }, {
-            '$set': { timestamp: now },
+            '$set': { lastDequeue: now },
             '$pop': { queue: popParam },
             '$inc': { count: -1 }
           });
