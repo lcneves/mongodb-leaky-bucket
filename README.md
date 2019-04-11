@@ -23,21 +23,23 @@ const bucket = new LeakyBucket(db, {
   limit: 200                   // Maximum elements in bucket
 });
 
-bucket.push('Element one', 'Element two')
-  .then(queueLength => console.log(queueLength)); // 2
+bucket.push('Element one', 'Element two', 'Element three')
+  .then(queueLength => console.log(queueLength)); // 3
 
+bucket.shift()
+  .then(element => console.dir(element)); // 'Element one'
 bucket.shift()
   .then(element => console.dir(element)); // undefined
 
 // a second later
 bucket.shift()
-  .then(element => console.dir(element)); // 'element one'
+  .then(element => console.dir(element)); // 'Element two'
 bucket.shift()
   .then(element => console.dir(element)); // undefined
 
 // another 500ms later
 bucket.shift()
-  .then(element => console.dir(element)); // 'element two'
+  .then(element => console.dir(element)); // 'Element three'
 ```
 
 ## API

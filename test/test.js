@@ -126,27 +126,32 @@ describe('Leaky bucket tests', () => {
       interval: 100
     });
 
-    await bucket.push('This should wait', 'This should wait too');
+    await bucket.push(
+      'This is immediately available',
+      'This should wait',
+      'This should wait too');
 
-    const immediateRes = await bucket.shift();
-    assert(immediateRes === undefined);
-
-    await time(100);
-
-    const delayedRes = await bucket.shift();
-    const immediateResTwo = await bucket.pop();
-    assert(delayedRes === 'This should wait');
+    const immediateResOne = await bucket.shift();
+    const immediateResTwo = await bucket.shift();
+    assert(immediateResOne === 'This is immediately available');
     assert(immediateResTwo === undefined);
 
     await time(100);
 
+    const delayedResOne = await bucket.shift();
     const delayedResTwo = await bucket.pop();
-    assert(delayedResTwo === 'This should wait too');
+    assert(delayedResOne === 'This should wait');
+    assert(delayedResTwo === undefined);
+
+    await time(100);
+
+    const moreDelayedRes = await bucket.pop();
+    assert(moreDelayedRes === 'This should wait too');
   });
 
-  it('obeys limit', async () => {
+  it('obeys limit for single inserts', async () => {
     const bucket = new LeakyBucket(db, {
-      collectionName: 'limit',
+      collectionName: 'limit-single',
       limit: 1
     });
 
@@ -157,18 +162,50 @@ describe('Leaky bucket tests', () => {
     await bucket.push('Message 2');
 
     try {
-      await bucket.push('Overflow');
+      await bucket.push('Overflow'); // Expect to fail
+      throw new Error();
     } catch (err) {
       assert(err.message === 'Unable to push!');
     }
 
     try {
-      await bucket.unshift('Overflow');
+      await bucket.unshift('Overflow'); // Expect to fail
+      throw new Error();
     } catch (err) {
       assert(err.message === 'Unable to push!');
     }
   });
 
+  it('obeys limit for multiple inserts', async () => {
+    const bucket = new LeakyBucket(db, {
+      collectionName: 'limit-multiple',
+      limit: 4
+    });
+
+    await bucket.push('Message 1');
+    const countOne = await bucket.push('Message 2', 'Message 3');
+    assert(countOne === 3);
+
+    try {
+      await bucket.push('Message 4', 'Overflow'); // Expect to fail
+      throw new Error();
+    } catch (err) {
+      assert(err.message === 'Unable to push!');
+    }
+
+    try {
+      await bucket.unshift('Message 4', 'Overflow'); // Expect to fail
+      throw new Error();
+    } catch (err) {
+      assert(err.message === 'Unable to push!');
+    }
+
+    const firstRes = await bucket.shift();
+    assert(firstRes === 'Message 1');
+
+    const countTwo = await bucket.push('Message 4', 'Message 5');
+    assert(countTwo === 4);
+  });
 
   it('can refill after an overflow', async () => {
     const bucket = new LeakyBucket(db, {
@@ -179,7 +216,8 @@ describe('Leaky bucket tests', () => {
     await bucket.push('Message 1');
 
     try {
-      await bucket.push('Overflow');
+      await bucket.push('Overflow'); // Expect to fail
+      throw new Error();
     } catch (err) {
       assert(err.message === 'Unable to push!');
     }

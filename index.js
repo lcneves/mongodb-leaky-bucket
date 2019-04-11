@@ -32,7 +32,7 @@ class LeakyBucket {
           lbUniqueProperty: 1,
           count: 0,
           queue: [],
-          timestamp: new Date()
+          timestamp: new Date(0)
         }))
         .catch(err => {
           if (err.toString().includes('E11000'))
@@ -60,7 +60,7 @@ class LeakyBucket {
       self.prime()
         .then(() => self.collection.findOneAndUpdate({
           lbUniqueProperty: 1,
-          count: { '$lt': self.limit }
+          count: { '$lte': self.limit - payloads.length }
         }, {
           '$push': { queue: pushOper },
           '$inc': { count: payloads.length }
