@@ -64,10 +64,12 @@ class LeakyBucket {
         }, {
           '$push': { queue: pushOper },
           '$inc': { count: payloads.length }
+        }, {
+          returnOriginal: false
         }))
         .then(res => {
           if (res.ok === 1 && res.value && res.value.lbUniqueProperty === 1)
-            resolve();
+            resolve(res.value.count);
           else
             reject(new Error('Unable to push!'));
         })

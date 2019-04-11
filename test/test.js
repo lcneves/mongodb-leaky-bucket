@@ -38,9 +38,10 @@ describe('Leaky bucket tests', () => {
     return bucket.prime();
   });
 
-  it('pushes one payload', () => {
+  it('pushes one payload', async () => {
     const bucket = new LeakyBucket(db, { collectionName: 'push-one' });
-    return bucket.push('Testing');
+    const count = await bucket.push('Testing');
+    assert(count === 1);
   });
 
   it('pushes and immediately shifts', () => {
@@ -50,9 +51,12 @@ describe('Leaky bucket tests', () => {
       .then(res => assert(res === 'Testing'));
   });
 
-  it('pushes multiple payloads', () => {
+  it('pushes multiple payloads', async () => {
     const bucket = new LeakyBucket(db, { collectionName: 'push-multiple' });
-    return bucket.push('One', 'Two', 'Three');
+    const countOne = await bucket.push('One', 'Two', 'Three');
+    const countTwo = await bucket.push('Four', 'Five');
+    assert(countOne === 3);
+    assert(countTwo === 5);
   });
 
   it('pushes multiple payloads and immediately shifts', async () => {
@@ -76,7 +80,9 @@ describe('Leaky bucket tests', () => {
     const bucket = new LeakyBucket(db, { collectionName: 'unshift' });
     await bucket.unshift('Five');
     await bucket.unshift('Two', 'Three', 'Four');
-    await bucket.unshift('One');
+    const count = await bucket.unshift('One');
+    assert(count === 5);
+
     const resOne = await bucket.shift();
     const resTwo = await bucket.shift();
     const resThree = await bucket.shift();
@@ -100,16 +106,18 @@ describe('Leaky bucket tests', () => {
     assert(resThree === 'Three');
   });
 
-  it('returns undefined when shifted empty', async () => {
+  it('returns undefined when shifted or popped empty', async () => {
     const bucket = new LeakyBucket(db, { collectionName: 'shift-empty' });
     await bucket.push('One');
     const resOne = await bucket.shift();
-    const resEmpty = await bucket.shift();
+    const resShiftEmpty = await bucket.shift();
+    const resPopEmpty = await bucket.pop();
     await bucket.push('Two');
     const resTwo = await bucket.shift();
     assert(resOne === 'One');
     assert(resTwo === 'Two');
-    assert(resEmpty === undefined);
+    assert(resShiftEmpty === undefined);
+    assert(resPopEmpty === undefined);
   });
 
   it('obeys interval', async () => {
@@ -126,13 +134,13 @@ describe('Leaky bucket tests', () => {
     await time(100);
 
     const delayedRes = await bucket.shift();
-    const immediateResTwo = await bucket.shift();
+    const immediateResTwo = await bucket.pop();
     assert(delayedRes === 'This should wait');
     assert(immediateResTwo === undefined);
 
     await time(100);
 
-    const delayedResTwo = await bucket.shift();
+    const delayedResTwo = await bucket.pop();
     assert(delayedResTwo === 'This should wait too');
   });
 
@@ -153,7 +161,14 @@ describe('Leaky bucket tests', () => {
     } catch (err) {
       assert(err.message === 'Unable to push!');
     }
+
+    try {
+      await bucket.unshift('Overflow');
+    } catch (err) {
+      assert(err.message === 'Unable to push!');
+    }
   });
+
 
   it('can refill after an overflow', async () => {
     const bucket = new LeakyBucket(db, {
@@ -180,6 +195,7 @@ describe('Leaky bucket tests', () => {
   it('works with two instances', async () => {
     const bucketOne = new LeakyBucket(db, { 'collectionName': 'two-insts' });
     await bucketOne.push('Message 1');
+
     const bucketTwo = new LeakyBucket(db, { 'collectionName': 'two-insts' });
     const firstRes = await bucketTwo.shift();
     assert(firstRes === 'Message 1');
@@ -191,7 +207,7 @@ describe('Leaky bucket tests', () => {
 
   it('accepts multiple JS data types as payload', async () => {
     const bucket = new LeakyBucket(db, { collectionName: 'types' });
-    await bucket.push(
+    const count = await bucket.push(
       'a string',
       3.14159,
       null,
@@ -199,6 +215,8 @@ describe('Leaky bucket tests', () => {
       [ 'zero', 1 ],
       { name: 'one complex object', prop: { arr: [ 1, [ 2, 3 ] ] } }
     );
+
+    assert(count === 6);
 
     const str = await bucket.shift();
     assert(typeof str === 'string');
