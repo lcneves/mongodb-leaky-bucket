@@ -1,6 +1,6 @@
 {
   "name": "mongodb-leaky-bucket",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "A throttled queue backed by MongoDB using the leaky bucket algorithm.",
   "main": "index.js",
   "scripts": {

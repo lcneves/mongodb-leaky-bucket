@@ -161,19 +161,11 @@ describe('Leaky bucket tests', () => {
 
     await bucket.push('Message 2');
 
-    try {
-      await bucket.push('Overflow'); // Expect to fail
-      throw new Error();
-    } catch (err) {
-      assert(err.message === 'Unable to push!');
-    }
+    const pushOverflowRes = await bucket.push('Overflow');
+    assert(pushOverflowRes === null);
 
-    try {
-      await bucket.unshift('Overflow'); // Expect to fail
-      throw new Error();
-    } catch (err) {
-      assert(err.message === 'Unable to push!');
-    }
+    const unshiftOverflowRes = await bucket.push('Overflow');
+    assert(unshiftOverflowRes === null);
   });
 
   it('obeys limit for multiple inserts', async () => {
@@ -186,19 +178,11 @@ describe('Leaky bucket tests', () => {
     const countOne = await bucket.push('Message 2', 'Message 3');
     assert(countOne === 3);
 
-    try {
-      await bucket.push('Message 4', 'Overflow'); // Expect to fail
-      throw new Error();
-    } catch (err) {
-      assert(err.message === 'Unable to push!');
-    }
+    const pushOverflowRes = await bucket.push('Message 4', 'Overflow');
+    assert(pushOverflowRes === null);
 
-    try {
-      await bucket.unshift('Message 4', 'Overflow'); // Expect to fail
-      throw new Error();
-    } catch (err) {
-      assert(err.message === 'Unable to push!');
-    }
+    const unshiftOverflowRes = await bucket.push('Message 4', 'Overflow');
+    assert(unshiftOverflowRes === null);
 
     const firstRes = await bucket.shift();
     assert(firstRes === 'Message 1');
@@ -215,12 +199,8 @@ describe('Leaky bucket tests', () => {
 
     await bucket.push('Message 1');
 
-    try {
-      await bucket.push('Overflow'); // Expect to fail
-      throw new Error();
-    } catch (err) {
-      assert(err.message === 'Unable to push!');
-    }
+    const pushOverflowRes = await bucket.push('Overflow');
+    assert(pushOverflowRes === null);
 
     const firstRes = await bucket.shift();
     assert(firstRes === 'Message 1');

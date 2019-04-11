@@ -58,7 +58,7 @@ A collection in this database will be used to store the deque.
 `limit` _[Integer]_: Maximum number of elements that the deque will store before refusing an enqueue operation. Default: `2147483648` (2^31).
 
 ### bucket.push(elementOne[, ...[, elementN]])
-Appends the parameter(s) to the queue. Returns a Promise with the new length of the queue. Will reject if operation would cause an overflow of the bucket's limit.
+Appends the parameter(s) to the queue. Returns a Promise with the new length of the queue. If operation would cause an overflow of the bucket's limit, Promise resolves to `null` and queue is not changed.
 
 ### bucket.shift()
 Dequeues the first element of the queue and returns a Promise containing this element. If the queue is empty or if the time passed since the last dequeuing operation is less than `options.interval`, operation does not alter the queue and returns `undefined`.

@@ -68,10 +68,16 @@ class LeakyBucket {
           returnOriginal: false
         }))
         .then(res => {
-          if (res.ok === 1 && res.value && res.value.lbUniqueProperty === 1)
-            resolve(res.value.count);
+          if (res.ok === 1) {
+            if (res.value && typeof res.value.count === 'number')
+              resolve(res.value.count);
+            else if (res.value === null)
+              resolve(null);
+            else
+              throw new Error('DB returned unexpected results!');
+          }
           else
-            reject(new Error('Unable to push!'));
+            reject(new Error('Database error!'));
         })
         .catch(err => {
           reject(err);
